@@ -23,8 +23,36 @@ function buildAddressLinkMappings(addresses, links) {
     return mappings;
   }
 
-  console.log('addresses and links length not equal');
+  console.log('error: addresses and links length not equal');
   return false;
+}
+
+function getInfo(url) {
+  request(url, (err, res, html) => {
+    const info = {};
+
+    if (!err) {
+      const $ = cheerio.load(html);
+      const buckets = $('.keyvalset');
+      const bTitle = buckets.eq(0).find('.liv-bullet').text();
+      const bAttrs = buckets.eq(0).find('li');
+
+      const attrsList = {};
+      for (let i = 0; i < bAttrs.length; i ++) {
+        const key = bAttrs.eq(i).find('strong').text();
+        const value = bAttrs.eq(i).find('span').text();
+
+        attrsList[key] = value;
+      }
+      debugger;
+
+
+    } else {
+
+      console.log('error: can not fetch info for ' + url);
+    }
+
+  });
 }
 
 app.get('/scrape', function(req, res) {
@@ -33,10 +61,14 @@ app.get('/scrape', function(req, res) {
       let $ = cheerio.load(html);
 
       const addresses = $("article h1 .result-address");
-      const links = $('article h1 a');
+      const links = $('article .mediaImg a');
 
       const addressLinkMappings = buildAddressLinkMappings(addresses, links);
-      console.dir(addressLinkMappings);
+      // console.dir(addressLinkMappings);
+
+      const url = addressLinkMappings[0].source;
+      console.log(url);
+      getInfo(url);
     }
   })
 })
