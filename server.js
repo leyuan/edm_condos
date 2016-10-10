@@ -1,9 +1,9 @@
 const express = require('express');
-const fs = require('fs');
 const request = require('request');
 const cheerio = require('cheerio');
-const app = express();
+const esClient = require('./esclient');
 
+const app = express();
 const FETCH_URL = 'https://www.edmontonrealestate.pro/idx/search.html?quick_search=true&search_universal=downtown&idx=ereb&minimum_price=200000&maximum_price=350000&search_reduced=&minimum_year=&maximum_year=&minimum_bedrooms_above_grade=2&maximum_bedrooms_above_grade=&minimum_bedrooms=&maximum_bedrooms=&minimum_full_bathrooms=&maximum_full_bathrooms=&minimum_half_bathrooms=&maximum_half_bathrooms=&minimum_sqft=&maximum_sqft=&minimum_acres=&maximum_acres=&minimum_stories=&maximum_stories=';
 
 
@@ -27,31 +27,64 @@ function buildAddressLinkMappings(addresses, links) {
   return false;
 }
 
-function getInfo(url) {
+function processCondo(url, address) {
   request(url, (err, res, html) => {
     const info = {};
 
     if (!err) {
       const $ = cheerio.load(html);
       const buckets = $('.keyvalset');
-      const bTitle = buckets.eq(0).find('.liv-bullet').text();
-      const bAttrs = buckets.eq(0).find('li');
+      const condoAttributes = {};
+      condoAttributes['Address'] = address;
+      // get all buckets
+      for (let i = 0; i < buckets.length; i ++) {
+        const bTitle = buckets.eq(i).find('.liv-bullet').text();
+        const bAttrs = buckets.eq(i).find('li');
 
-      const attrsList = {};
-      for (let i = 0; i < bAttrs.length; i ++) {
-        const key = bAttrs.eq(i).find('strong').text();
-        const value = bAttrs.eq(i).find('span').text();
+        const attrsList = {};
+        for (let i = 0; i < bAttrs.length; i ++) {
+          const key = bAttrs.eq(i).find('strong').text();
+          const value = bAttrs.eq(i).find('span').text();
 
-        attrsList[key] = value;
+          attrsList[key] = value;
+        }
+        condoAttributes[bTitle] = attrsList;
       }
-      debugger;
 
+      // build condo data => {address => condoBucketsInfo}
+      // const condoData = {};
+      // condoData[address] = condoAttributes;
+
+      // use condo address as id
+      const id = address.replace(/ /g, '_');
+      saveCondo(id, condoAttributes);
 
     } else {
 
       console.log('error: can not fetch info for ' + url);
+      console.log('error:' + err);
     }
 
+  });
+}
+
+function saveCondo(id, data, callback=null) {
+  debugger;
+  esClient.create({
+    index: 'edm_condos',
+    type: 'condos',
+    id: id,
+    body: data,
+  }, function (err, response) {
+    if (!err) {
+      console.log(response);
+      console.log('condo saved');
+      if (typeof callback === 'function') {
+        callback();
+      }
+    } else {
+      console.log(err);
+    }
   });
 }
 
@@ -60,15 +93,20 @@ app.get('/scrape', function(req, res) {
     if (!error) {
       let $ = cheerio.load(html);
 
+      // build [{addr: url}, ..] link mappings for all condos in page 1
       const addresses = $("article h1 .result-address");
       const links = $('article .mediaImg a');
-
       const addressLinkMappings = buildAddressLinkMappings(addresses, links);
-      // console.dir(addressLinkMappings);
 
+      // get first condo address and url
+      const address = addressLinkMappings[0].addr;
       const url = addressLinkMappings[0].source;
-      console.log(url);
-      getInfo(url);
+
+      //TODO - check if this condo has already been stored, if so, skip it
+
+      // process information for first new condo
+      processCondo(url, address);
+      res.send('helllllo edmonton!!!');
     }
   })
 })

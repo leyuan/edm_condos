@@ -1,12 +1,13 @@
 {
-  "name"         : "Edmonton_Condos",
-  "version"      : "0.0.1",
-  "description"  : "I don't have API access :(",
-  "main"         : "server.js",
-  "author"       : "Leyuan",
-  "dependencies" : {
-    "express"    : "latest",
-    "request"    : "latest",
-    "cheerio"    : "latest"
+  "name": "Edmonton_Condos",
+  "version": "0.0.1",
+  "description": "I don't have API access :(",
+  "main": "server.js",
+  "author": "Leyuan",
+  "dependencies": {
+    "cheerio": "latest",
+    "elasticsearch": "^11.0.1",
+    "express": "latest",
+    "request": "latest"
   }
 }
