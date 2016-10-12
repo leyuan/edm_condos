@@ -4,15 +4,18 @@ const cheerio = require('cheerio');
 const esClient = require('./esclient');
 
 const app = express();
-const FETCH_URL = 'https://www.edmontonrealestate.pro/idx/search.html?quick_search=true&search_universal=downtown&idx=ereb&minimum_price=200000&maximum_price=350000&search_reduced=&minimum_year=&maximum_year=&minimum_bedrooms_above_grade=2&maximum_bedrooms_above_grade=&minimum_bedrooms=&maximum_bedrooms=&minimum_full_bathrooms=&maximum_full_bathrooms=&minimum_half_bathrooms=&maximum_half_bathrooms=&minimum_sqft=&maximum_sqft=&minimum_acres=&maximum_acres=&minimum_stories=&maximum_stories=';
-
+const url1 = 'https://www.edmontonrealestate.pro/idx/search.html?quick_search=true&search_universal=downtown&idx=ereb&minimum_price=200000&maximum_price=350000&search_reduced=&minimum_year=&maximum_year=&minimum_bedrooms_above_grade=2&maximum_bedrooms_above_grade=&minimum_bedrooms=&maximum_bedrooms=&minimum_full_bathrooms=&maximum_full_bathrooms=&minimum_half_bathrooms=&maximum_half_bathrooms=&minimum_sqft=&maximum_sqft=&minimum_acres=&maximum_acres=&minimum_stories=&maximum_stories=';
+const url2 = 'https://www.edmontonrealestate.pro/idx/search.html?quick_search=true&search_universal=downtown&idx=ereb&minimum_price=200000&maximum_price=350000&search_reduced=&minimum_year=&maximum_year=&minimum_bedrooms_above_grade=2&maximum_bedrooms_above_grade=&minimum_bedrooms=&maximum_bedrooms=&minimum_full_bathrooms=&maximum_full_bathrooms=&minimum_half_bathrooms=&maximum_half_bathrooms=&minimum_sqft=&maximum_sqft=&minimum_acres=&maximum_acres=&minimum_stories=&maximum_stories=&p=2';
+const url3 = 'https://www.edmontonrealestate.pro/idx/search.html?quick_search=true&search_universal=downtown&idx=ereb&minimum_price=200000&maximum_price=350000&search_reduced=&minimum_year=&maximum_year=&minimum_bedrooms_above_grade=2&maximum_bedrooms_above_grade=&minimum_bedrooms=&maximum_bedrooms=&minimum_full_bathrooms=&maximum_full_bathrooms=&minimum_half_bathrooms=&maximum_half_bathrooms=&minimum_sqft=&maximum_sqft=&minimum_acres=&maximum_acres=&minimum_stories=&maximum_stories=&p=3';
+const url4 = 'https://www.edmontonrealestate.pro/idx/search.html?quick_search=true&search_universal=downtown&idx=ereb&minimum_price=200000&maximum_price=350000&search_reduced=&minimum_year=&maximum_year=&minimum_bedrooms_above_grade=2&maximum_bedrooms_above_grade=&minimum_bedrooms=&maximum_bedrooms=&minimum_full_bathrooms=&maximum_full_bathrooms=&minimum_half_bathrooms=&maximum_half_bathrooms=&minimum_sqft=&maximum_sqft=&minimum_acres=&maximum_acres=&minimum_stories=&maximum_stories=&p=4';
+const URLs = [url1, url2, url3, url4];
 
 function buildAddressLinkMappings(addresses, links) {
   const mappings = [];
-  if (addresses.length === links.length) {
+  if (addresses.length != 0 && addresses.length === links.length) {
     for (let i = 0; i < addresses.length; i ++) {
-      const addr = addresses[0].children[0].data;
-      const source = links[0].attribs.href
+      const addr = addresses[i].children[0].data;
+      const source = links[i].attribs.href
 
       mappings.push({
         addr,
@@ -54,6 +57,7 @@ function processCondo(url, address) {
       const buckets = $('.keyvalset');
       const condoAttributes = {};
       condoAttributes['Address'] = address;
+      condoAttributes['Url'] = url;
       // get all buckets
       for (let i = 0; i < buckets.length; i ++) {
         const bTitle = buckets.eq(i).find('.liv-bullet').text();
@@ -81,16 +85,20 @@ function processCondo(url, address) {
   });
 }
 
-function saveCondo(id, data, callback=null) {
-  // debugger;
-  esClient.create({
+function saveCondo(id, body, callback=null) {
+  const data = {
     index: 'edm_condos',
     type: 'condos',
-    id: id,
-    body: data,
-  }, function (err, response) {
+    body: body,
+  };
+
+  if (id !== 'Address_Unavailable') {
+    data.id = id;
+  }
+
+  esClient.create(data, function (err, response) {
     if (!err) {
-      console.log(response);
+      // console.log(response);
       console.log('condo saved');
       if (typeof callback === 'function') {
         callback();
@@ -102,28 +110,36 @@ function saveCondo(id, data, callback=null) {
 }
 
 app.get('/scrape', function(req, res) {
-  request(FETCH_URL, function(error, response, html) {
-    if (!error) {
-      let $ = cheerio.load(html);
+  URLs.map((url) => {
+    // console.log(url);
+    request(url, function(error, response, html) {
+      if (!error) {
+        let $ = cheerio.load(html);
 
-      // build [{addr: url}, ..] link mappings for all condos in page 1
-      const addresses = $("article h1 .result-address");
-      const links = $('article .mediaImg a');
-      const addressLinkMappings = buildAddressLinkMappings(addresses, links);
+        // build [{addr: url}, ..] link mappings for all condos in page 1
+        const addresses = $("article h1 .result-address");
+        const links = $('article .mediaImg a');
+        const addressLinkMappings = buildAddressLinkMappings(addresses, links);
 
-      // get first condo address and url
-      const address = addressLinkMappings[0].addr;
-      const url = addressLinkMappings[0].source;
+        // debugger;
 
-      // check if this condo has already been stored, if so, skip it
-      checkCondoExist(address, function() {
-        // if not exist, process it.
-        processCondo(url, address);
-      });
+        addressLinkMappings.map(function (condo) {
+          // get first condo address and url
+          const address = condo.addr;
+          const url = condo.source;
 
-      res.send('helllllo edmonton!!!');
-    }
-  })
+          // console.log(address);
+
+          // check if this condo has already been stored, if not exist, process it.
+          checkCondoExist(address, function () {
+            processCondo(url, address);
+          });
+        });
+
+      }
+    });
+  });
+  res.send('helllllo edmonton!!!');
 })
 
 app.listen('8081')
