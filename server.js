@@ -27,6 +27,24 @@ function buildAddressLinkMappings(addresses, links) {
   return false;
 }
 
+function createIdFromAddress(address) {
+  return address.replace(/ /g, '_');
+}
+
+function checkCondoExist(address, nonExistCallback) {
+  esClient.exists({
+    index: 'edm_condos',
+    type: 'condos',
+    id: createIdFromAddress(address)
+  }, function (err, exists) {
+    if (exists === false) {
+      nonExistCallback();
+    } else {
+      console.log('condo exist, skipping');
+    }
+  });
+}
+
 function processCondo(url, address) {
   request(url, (err, res, html) => {
     const info = {};
@@ -50,13 +68,8 @@ function processCondo(url, address) {
         }
         condoAttributes[bTitle] = attrsList;
       }
-
-      // build condo data => {address => condoBucketsInfo}
-      // const condoData = {};
-      // condoData[address] = condoAttributes;
-
       // use condo address as id
-      const id = address.replace(/ /g, '_');
+      const id = createIdFromAddress(address);
       saveCondo(id, condoAttributes);
 
     } else {
@@ -69,7 +82,7 @@ function processCondo(url, address) {
 }
 
 function saveCondo(id, data, callback=null) {
-  debugger;
+  // debugger;
   esClient.create({
     index: 'edm_condos',
     type: 'condos',
@@ -102,10 +115,12 @@ app.get('/scrape', function(req, res) {
       const address = addressLinkMappings[0].addr;
       const url = addressLinkMappings[0].source;
 
-      //TODO - check if this condo has already been stored, if so, skip it
+      // check if this condo has already been stored, if so, skip it
+      checkCondoExist(address, function() {
+        // if not exist, process it.
+        processCondo(url, address);
+      });
 
-      // process information for first new condo
-      processCondo(url, address);
       res.send('helllllo edmonton!!!');
     }
   })
