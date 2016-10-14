@@ -1,6 +1,8 @@
 const express = require('express');
+const http = require('http');
 const path = require('path');
 const request = require('request');
+const reload = require('reload');
 const cheerio = require('cheerio');
 const esClient = require('./esclient');
 
@@ -109,6 +111,8 @@ function saveCondo(id, body, callback=null) {
   });
 }
 
+app.set('port', process.env.PORT || 8081);
+
 app.get('/api/condos', function (req, res) {
   esClient.search({
     index: 'edm_condos',
@@ -172,6 +176,11 @@ app.get('/scrape', function(req, res) {
 
 app.use('/', express.static(path.join(__dirname, 'public')));
 
-app.listen('8081')
-console.log('Magic happens on port 8081');
-exports = module.exports = app;
+// app.listen('8081')
+const server = http.createServer(app);
+reload(server, app);
+
+server.listen(app.get('port'), function() {
+  console.log('Magic happens on port 8081');
+});
+// exports = module.exports = app;

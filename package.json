@@ -18,5 +18,8 @@
     "live-server": "^1.1.0",
     "request": "latest",
     "watchify": "^3.7.0"
+  },
+  "devDependencies": {
+    "reload": "^1.0.1"
   }
 }
