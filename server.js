@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const request = require('request');
 const cheerio = require('cheerio');
 const esClient = require('./esclient');
@@ -7,8 +8,7 @@ const app = express();
 const url1 = 'https://www.edmontonrealestate.pro/idx/search.html?quick_search=true&search_universal=downtown&idx=ereb&minimum_price=200000&maximum_price=350000&search_reduced=&minimum_year=&maximum_year=&minimum_bedrooms_above_grade=2&maximum_bedrooms_above_grade=&minimum_bedrooms=&maximum_bedrooms=&minimum_full_bathrooms=&maximum_full_bathrooms=&minimum_half_bathrooms=&maximum_half_bathrooms=&minimum_sqft=&maximum_sqft=&minimum_acres=&maximum_acres=&minimum_stories=&maximum_stories=';
 const url2 = 'https://www.edmontonrealestate.pro/idx/search.html?quick_search=true&search_universal=downtown&idx=ereb&minimum_price=200000&maximum_price=350000&search_reduced=&minimum_year=&maximum_year=&minimum_bedrooms_above_grade=2&maximum_bedrooms_above_grade=&minimum_bedrooms=&maximum_bedrooms=&minimum_full_bathrooms=&maximum_full_bathrooms=&minimum_half_bathrooms=&maximum_half_bathrooms=&minimum_sqft=&maximum_sqft=&minimum_acres=&maximum_acres=&minimum_stories=&maximum_stories=&p=2';
 const url3 = 'https://www.edmontonrealestate.pro/idx/search.html?quick_search=true&search_universal=downtown&idx=ereb&minimum_price=200000&maximum_price=350000&search_reduced=&minimum_year=&maximum_year=&minimum_bedrooms_above_grade=2&maximum_bedrooms_above_grade=&minimum_bedrooms=&maximum_bedrooms=&minimum_full_bathrooms=&maximum_full_bathrooms=&minimum_half_bathrooms=&maximum_half_bathrooms=&minimum_sqft=&maximum_sqft=&minimum_acres=&maximum_acres=&minimum_stories=&maximum_stories=&p=3';
-const url4 = 'https://www.edmontonrealestate.pro/idx/search.html?quick_search=true&search_universal=downtown&idx=ereb&minimum_price=200000&maximum_price=350000&search_reduced=&minimum_year=&maximum_year=&minimum_bedrooms_above_grade=2&maximum_bedrooms_above_grade=&minimum_bedrooms=&maximum_bedrooms=&minimum_full_bathrooms=&maximum_full_bathrooms=&minimum_half_bathrooms=&maximum_half_bathrooms=&minimum_sqft=&maximum_sqft=&minimum_acres=&maximum_acres=&minimum_stories=&maximum_stories=&p=4';
-const URLs = [url1, url2, url3, url4];
+const URLs = [url1, url2, url3];
 
 function buildAddressLinkMappings(addresses, links) {
   const mappings = [];
@@ -141,6 +141,8 @@ app.get('/scrape', function(req, res) {
   });
   res.send('helllllo edmonton!!!');
 })
+
+app.use('/', express.static(path.join(__dirname, 'public')));
 
 app.listen('8081')
 console.log('Magic happens on port 8081');
