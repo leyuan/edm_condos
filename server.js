@@ -52,7 +52,6 @@ function checkCondoExist(address, nonExistCallback) {
 
 function processCondo(url, address) {
   request(url, (err, res, html) => {
-    const info = {};
 
     if (!err) {
       const $ = cheerio.load(html);
