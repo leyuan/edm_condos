@@ -3,4 +3,67 @@
 
 console.log('hello react & edmonton ');
 
+var CondoContainer = React.createClass({
+  displayName: 'CondoContainer',
+
+  loadCondos: function loadCondos() {
+    $.ajax({
+      url: this.props.url,
+      dataType: 'json',
+      cache: false,
+      success: function (data) {
+        console.log(data);
+        this.setState({ data: data });
+      }.bind(this),
+      error: function (xhr, status, err) {
+        console.error(this.props.url, status, err.toString());
+      }.bind(this)
+    });
+  },
+  getInitialState: function getInitialState() {
+    return { data: [] };
+  },
+  componentDidMount: function componentDidMount() {
+    this.loadCondos();
+  },
+  render: function render() {
+    return React.createElement(
+      'div',
+      { className: 'condo-container' },
+      React.createElement(
+        'h1',
+        null,
+        'Welcome to Edmonton Condos'
+      ),
+      React.createElement(CondoList, { data: this.state.data })
+    );
+  }
+});
+
+var CondoList = React.createClass({
+  displayName: 'CondoList',
+
+  render: function render() {
+    var condoNodes = this.props.data.map(function (condo) {
+      return React.createElement(
+        'div',
+        null,
+        React.createElement(
+          'h3',
+          null,
+          'a condo'
+        ),
+        condo.addr
+      );
+    });
+    return React.createElement(
+      'div',
+      { className: 'className' },
+      condoNodes
+    );
+  }
+});
+
+ReactDOM.render(React.createElement(CondoContainer, { url: 'http://localhost:8081/api/condos' }), document.getElementById('condo-list'));
+
 },{}]},{},[1]);

@@ -109,6 +109,34 @@ function saveCondo(id, body, callback=null) {
   });
 }
 
+app.get('/api/condos', function (req, res) {
+  esClient.search({
+    index: 'edm_condos',
+    type: 'condos',
+    size: 2
+  }, function (error, response) {
+    if (!error) {
+      const condos = [];
+      const condoData = response.hits.hits;
+      console.log(condoData);
+
+      condoData.map((condo) => {
+        const stub = {
+          addr: condo["_source"]["Address"]
+        };
+        condos.push(stub);
+      });
+
+      res.send(condos);
+    } else {
+      console.log(error);
+      res.send('error ..');
+    }
+  });
+
+  // res.send('fetching condos ...');
+});
+
 app.get('/scrape', function(req, res) {
   URLs.map((url) => {
     // console.log(url);
