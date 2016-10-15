@@ -3,12 +3,19 @@
 
 console.log('hello react & edmonton ');
 
+var ReactRouter = window.ReactRouter;
+var Router = ReactRouter.Router;
+var Route = ReactRouter.Route;
+var Link = ReactRouter.Link;
+var Redirect = ReactRouter.Redirect;
+var browserHistory = ReactRouter.browserHistory;
+
 var CondoContainer = React.createClass({
   displayName: 'CondoContainer',
 
   loadCondos: function loadCondos() {
     $.ajax({
-      url: this.props.url,
+      url: 'http://localhost:8081/api/condos',
       dataType: 'json',
       cache: false,
       success: function (data) {
@@ -47,11 +54,16 @@ var CondoList = React.createClass({
     var condoNodes = this.props.data.map(function (condo) {
       return React.createElement(
         'div',
-        null,
+        { key: condo.addr },
         React.createElement(
           'h3',
           null,
           'a condo'
+        ),
+        React.createElement(
+          Link,
+          { to: '/condo' },
+          'please'
         ),
         condo.addr
       );
@@ -64,6 +76,29 @@ var CondoList = React.createClass({
   }
 });
 
-ReactDOM.render(React.createElement(CondoContainer, { url: 'http://localhost:8081/api/condos' }), document.getElementById('condo-list'));
+var CondoInfo = React.createClass({
+  displayName: 'CondoInfo',
+  render: function render() {
+    return React.createElement(
+      'h3',
+      null,
+      'Oh hello this is condo page'
+    );
+  }
+});
+
+var StaticRoute = React.createClass({
+  displayName: 'StaticRoute',
+
+  render: function render() {
+    return React.createElement(
+      Router,
+      { history: browserHistory },
+      React.createElement(Route, { path: '/', component: CondoContainer }),
+      React.createElement(Route, { path: '/condo', component: CondoInfo })
+    );
+  }
+});
+ReactDOM.render(React.createElement(StaticRoute, null), document.getElementById('app'));
 
 },{}]},{},[1]);

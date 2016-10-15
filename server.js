@@ -174,6 +174,7 @@ app.get('/scrape', function(req, res) {
 })
 
 app.use('/', express.static(path.join(__dirname, 'public')));
+app.use('/condo', express.static(path.join(__dirname, 'public')));
 
 // app.listen('8081')
 const server = http.createServer(app);
